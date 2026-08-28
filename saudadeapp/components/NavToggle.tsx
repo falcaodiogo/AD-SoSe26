@@ -12,10 +12,13 @@ interface NavToggleProps {
 
 const GRADIENTS: Record<Tab, [string, string, string]> = {
   places: ["#E696E2", "#BC6171", "#514C3B"],
-  people: ["#626078", "#33477A", "#85AABF"],
+  people: ["#626078", "#33477A", "#8ca8b9"],
 };
 
-export default function NavToggle({ active, onChange }: NavToggleProps) {
+export default function NavToggle({
+  active,
+  onChange,
+}: Readonly<NavToggleProps>) {
   return (
     <View style={styles.row}>
       <ToggleButton
@@ -39,12 +42,12 @@ function ToggleButton({
   tab,
   isActive,
   onPress,
-}: {
+}: Readonly<{
   label: string;
   tab: Tab;
   isActive: boolean;
   onPress: () => void;
-}) {
+}>) {
   return (
     <Pressable style={styles.buttonWrapper} onPress={onPress}>
       <LinearGradient
@@ -53,7 +56,6 @@ function ToggleButton({
         end={{ x: 0.5, y: 1 }}
         style={[styles.button, !isActive && styles.buttonInactive]}
       >
-        {/* Hazy/out-of-focus look for the unselected pill */}
         {!isActive && (
           <BlurView
             intensity={25}
@@ -61,6 +63,9 @@ function ToggleButton({
             style={StyleSheet.absoluteFill}
           />
         )}
+
+        <View pointerEvents="none" style={styles.insetShadow} />
+
         <Text
           style={[
             styles.label,
@@ -90,7 +95,7 @@ const styles = StyleSheet.create({
   },
   button: {
     borderRadius: 999,
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: "rgb(255, 255, 255)",
     paddingVertical: 16,
     paddingHorizontal: 24,
@@ -98,8 +103,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     overflow: "hidden",
     height: 80,
-    boxShadow: "inset 0px 4px 8px rgb(255, 255, 255)",
     // filter: "blur(2px)",
+  },
+  insetShadow: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 999,
+    boxShadow: "inset 0px 0px 30px rgb(248, 248, 248)",
   },
   buttonInactive: {
     opacity: 0.55,

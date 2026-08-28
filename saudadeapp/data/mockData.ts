@@ -5,11 +5,13 @@ export const entries: Entry[] = [
     id: "julia",
     type: "person",
     name: "Julia",
+    latitude: 50.8762,
+    longitude: 8.0205,
     images: [
       "https://placekitten.com/200/200",
       "https://placekitten.com/201/200",
     ],
-    note: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+    note: "Met near Unteres Schloss during sunset.",
   },
   {
     id: "beatrice",
@@ -17,14 +19,17 @@ export const entries: Entry[] = [
     name: "Beatrice",
     latitude: 50.8759,
     longitude: 8.0231,
+    note: "Favorite cafe study partner.",
   },
   {
     id: "cameron",
     type: "person",
     name: "Cameron",
+    latitude: 50.8721,
+    longitude: 8.028,
+    note: "Lives close to Oberes Schloss park.",
   },
 
-  // Places in Siegen, Germany
   {
     id: "siegen-hauptbahnhof",
     type: "place",
@@ -48,13 +53,5 @@ export const entries: Entry[] = [
     latitude: 50.8744,
     longitude: 8.0218,
     note: "A historic palace located in the centre of Siegen.",
-  },
-  {
-    id: "university-siegen",
-    type: "place",
-    name: "University of Siegen",
-    latitude: 50.9064,
-    longitude: 8.0271,
-    note: "University campus in Siegen.",
   },
 ];

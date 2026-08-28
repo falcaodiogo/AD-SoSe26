@@ -1,13 +1,11 @@
-import { useState } from "react";
-import { View, FlatList, StyleSheet } from "react-native";
-import MapView, { Marker } from "react-native-maps";
 import { useRouter } from "expo-router";
+import { useState } from "react";
+import { FlatList, Image, StyleSheet, View } from "react-native";
+import MapView, { Marker } from "react-native-maps";
 import Logo from "../components/Logo";
 import NavToggle, { Tab } from "../components/NavToggle";
 import PersonListItem from "../components/PersonListItem";
 import { entries } from "../data/mockData";
-import { LinearGradient } from "expo-linear-gradient";
-import { Ionicons } from "@expo/vector-icons";
 
 const minimalMapStyle = [
   { elementType: "geometry", stylers: [{ color: "#f7f7f7" }] },
@@ -23,12 +21,19 @@ const minimalMapStyle = [
   { featureType: "transit", stylers: [{ visibility: "off" }] },
 ];
 
+const DEFAULT_PERSON_IMAGE = require("../assets/pins/people.png");
+const DEFAULT_PLACE_IMAGE = require("../assets/pins/place.png");
+
 export default function HomeScreen() {
   const [tab, setTab] = useState<Tab>("places");
   const router = useRouter();
 
-  const places = entries.filter((e) => e.type === "place");
   const people = entries.filter((e) => e.type === "person");
+
+  // 1. Create a combined array of anything that has coordinates
+  const mapEntries = entries.filter(
+    (e) => e.latitude !== undefined && e.longitude !== undefined,
+  );
 
   return (
     <View style={styles.container}>
@@ -40,18 +45,18 @@ export default function HomeScreen() {
             style={styles.map}
             customMapStyle={minimalMapStyle}
             initialRegion={{
-              latitude: places[0]?.latitude ?? 0,
-              longitude: places[0]?.longitude ?? 0,
+              latitude: mapEntries[0]?.latitude ?? 50.8748,
+              longitude: mapEntries[0]?.longitude ?? 8.0243,
               latitudeDelta: 0.04,
               longitudeDelta: 0.04,
             }}
           >
-            {places.map((item) => {
+            {mapEntries.map((item) => {
               const isPerson = item.type === "person";
-              const gradientColors = isPerson
-                ? (["#D241DF", "#875889", "#7E709A"] as const)
-                : (["#B96F6F", "#ED7C3A", "#EFC98E"] as const);
-              const iconName = isPerson ? "person" : "heart";
+
+              const pinImage = isPerson
+                ? DEFAULT_PERSON_IMAGE
+                : DEFAULT_PLACE_IMAGE;
 
               return (
                 <Marker
@@ -63,14 +68,14 @@ export default function HomeScreen() {
                   title={item.name}
                   onPress={() => router.push(`/detail/${item.id}`)}
                 >
-                  <LinearGradient
-                    colors={gradientColors}
-                    start={{ x: 0.2, y: 0.2 }}
-                    end={{ x: 0.8, y: 0.8 }}
-                    style={styles.markerCircle}
-                  >
-                    <Ionicons name={iconName} size={24} color="white" />
-                  </LinearGradient>
+                  <Image
+                    source={
+                      typeof pinImage === "string"
+                        ? { uri: pinImage }
+                        : pinImage
+                    }
+                    style={styles.markerImage}
+                  />
                 </Marker>
               );
             })}
@@ -106,20 +111,10 @@ const styles = StyleSheet.create({
   },
   content: { flex: 1, borderRadius: 64, overflow: "hidden" },
   map: { flex: 1, borderRadius: 64 },
-  list: { padding: 32 },
-
-  markerCircle: {
+  list: { paddingTop: 32, gap: 16 },
+  markerImage: {
     width: 44,
     height: 44,
-    borderRadius: 26,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "white",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 4,
+    resizeMode: "contain",
   },
 });
