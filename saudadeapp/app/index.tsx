@@ -111,7 +111,7 @@ const styles = StyleSheet.create({
   },
   content: { flex: 1, borderRadius: 64, overflow: "hidden" },
   map: { flex: 1, borderRadius: 64 },
-  list: { paddingTop: 32, gap: 16 },
+  list: { paddingTop: 32, gap: 14 },
   markerImage: {
     width: 44,
     height: 44,
