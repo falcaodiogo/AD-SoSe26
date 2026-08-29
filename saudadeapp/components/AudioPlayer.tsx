@@ -1,75 +1,134 @@
-import { View, Text, Pressable, StyleSheet } from 'react-native';
-import * as DocumentPicker from 'expo-document-picker';
-import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
+import { useEffect, useRef } from "react";
+import { View, Pressable, StyleSheet, Animated, Easing } from "react-native";
+import { useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
+import * as DocumentPicker from "expo-document-picker";
 
-interface AudioPlayerProps {
+interface Props {
   uri?: string;
-  onChangeUri?: (uri: string) => void;
+  onChangeUri: (uri: string | undefined) => void;
+  variant?: "playback" | "record";
 }
 
-// No recording here on purpose — the user picks an existing audio file
-// from their device, and this component just plays / pauses it.
-export default function AudioPlayer({ uri, onChangeUri }: AudioPlayerProps) {
+const BAR_COUNT = 46;
+const ACCENT = { playback: "#ef4444", record: "#ec4899" };
+
+export default function AudioPlayer({
+  uri,
+  onChangeUri,
+  variant = "playback",
+}: Readonly<Props>) {
+  const accent = ACCENT[variant];
+
   const player = useAudioPlayer(uri ?? null);
   const status = useAudioPlayerStatus(player);
+  const isPlaying = status.playing;
 
-  const handleAdd = async () => {
-    const result = await DocumentPicker.getDocumentAsync({ type: 'audio/*' });
-    if (!result.canceled && result.assets[0] && onChangeUri) {
-      onChangeUri(result.assets[0].uri);
+  useEffect(() => {
+    if (status.didJustFinish) {
+      player.seekTo(0);
     }
+  }, [status.didJustFinish, player]);
+
+  const pickAudio = async () => {
+    const result = await DocumentPicker.getDocumentAsync({ type: "audio/*" });
+    if (!result.canceled) onChangeUri(result.assets[0].uri);
   };
 
-  const togglePlay = () => {
-    if (!uri) return;
-    if (status.playing) {
+  const toggle = () => {
+    if (isPlaying) {
       player.pause();
+      player.seekTo(0);
     } else {
       player.play();
     }
   };
 
-  if (!uri) {
-    if (!onChangeUri) return null; // nothing to show, nothing to add
-    return (
-      <Pressable style={styles.addButton} onPress={handleAdd}>
-        <Text style={styles.addButtonText}>+ Add audio</Text>
-      </Pressable>
-    );
-  }
+  const handlePress = uri ? toggle : pickAudio;
 
   return (
-    <View style={styles.row}>
-      <Pressable style={styles.playButton} onPress={togglePlay}>
-        <Text style={styles.playButtonText}>{status.playing ? 'Pause' : 'Play'}</Text>
-      </Pressable>
-      {onChangeUri && (
-        <Pressable onPress={handleAdd}>
-          <Text style={styles.replaceText}>Replace</Text>
-        </Pressable>
-      )}
+    <Pressable style={styles.container} onPress={handlePress}>
+      <Waveform accent={accent} isPlaying={isPlaying} />
+    </Pressable>
+  );
+}
+
+function Waveform({
+  accent,
+  isPlaying,
+}: Readonly<{
+  accent: string;
+  isPlaying: boolean;
+}>) {
+  const bases = useRef(
+    Array.from({ length: BAR_COUNT }, (_, i) => 6 + ((i * 37) % 22)),
+  ).current;
+  const pulses = useRef(bases.map(() => new Animated.Value(0))).current;
+
+  useEffect(() => {
+    const loops = pulses.map((val, i) =>
+      Animated.loop(
+        Animated.sequence([
+          Animated.delay((i % 6) * 60),
+          Animated.timing(val, {
+            toValue: 1,
+            duration: 260 + (i % 5) * 40,
+            easing: Easing.inOut(Easing.sin),
+            useNativeDriver: false,
+          }),
+          Animated.timing(val, {
+            toValue: 0,
+            duration: 260 + (i % 5) * 40,
+            easing: Easing.inOut(Easing.sin),
+            useNativeDriver: false,
+          }),
+        ]),
+      ),
+    );
+
+    if (isPlaying) {
+      loops.forEach((l) => l.start());
+    } else {
+      loops.forEach((l) => l.stop());
+      pulses.forEach((v) => v.setValue(0));
+    }
+
+    return () => loops.forEach((l) => l.stop());
+  }, [isPlaying, pulses]);
+
+  return (
+    <View style={styles.barsRow}>
+      {bases.map((h, i) => (
+        <Animated.View
+          key={i}
+          style={[
+            styles.bar,
+            {
+              backgroundColor: accent,
+              height: isPlaying
+                ? pulses[i].interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [h * 0.4, h],
+                  })
+                : h * 0.4,
+            },
+          ]}
+        />
+      ))}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', gap: 16, marginVertical: 12 },
-  playButton: {
-    backgroundColor: '#ddd',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 20,
+  container: {
+    width: "100%",
+    backgroundColor: "#fff",
+    borderRadius: 32,
+    paddingVertical: 24,
+    alignContent: "center",
+    alignItems: "center",
+    boxShadow: "inset 0px 0px 20px rgba(0, 0, 0, 0.09)",
+    justifyContent: "center",
   },
-  playButtonText: { fontWeight: '600' },
-  replaceText: { color: '#666', textDecorationLine: 'underline' },
-  addButton: {
-    marginVertical: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#999',
-    alignSelf: 'flex-start',
-  },
-  addButtonText: { color: '#666' },
+  barsRow: { flexDirection: "row", alignItems: "center", gap: 2, height: 32 },
+  bar: { width: 3, borderRadius: 2 },
 });

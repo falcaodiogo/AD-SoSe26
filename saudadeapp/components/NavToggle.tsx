@@ -1,5 +1,5 @@
-import React from "react";
-import { View, Pressable, Text, StyleSheet } from "react-native";
+import React, { useEffect, useRef } from "react";
+import { View, Pressable, Text, StyleSheet, Animated } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
 
@@ -14,6 +14,8 @@ const GRADIENTS: Record<Tab, [string, string, string]> = {
   places: ["#E696E2", "#BC6171", "#514C3B"],
   people: ["#626078", "#33477A", "#8ca8b9"],
 };
+
+const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
 
 export default function NavToggle({
   active,
@@ -48,33 +50,66 @@ function ToggleButton({
   isActive: boolean;
   onPress: () => void;
 }>) {
+  const anim = useRef(new Animated.Value(isActive ? 1 : 0)).current;
+
+  useEffect(() => {
+    Animated.timing(anim, {
+      toValue: isActive ? 1 : 0,
+      duration: 350,
+      useNativeDriver: false,
+    }).start();
+  }, [isActive, anim]);
+
+  const buttonOpacity = anim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.55, 1],
+  });
+
+  const buttonScale = anim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.95, 1],
+  });
+
+  const blurOpacity = anim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 0],
+  });
+
+  const textColor = anim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["rgba(244,245,241,0.6)", "rgba(255,255,255,1)"],
+  });
+
   return (
     <Pressable style={styles.buttonWrapper} onPress={onPress}>
-      <LinearGradient
+      <AnimatedLinearGradient
         colors={GRADIENTS[tab]}
         start={{ x: 0.5, y: 0 }}
         end={{ x: 0.5, y: 1 }}
-        style={[styles.button, !isActive && styles.buttonInactive]}
+        style={[
+          styles.button,
+          {
+            opacity: buttonOpacity,
+            transform: [{ scale: buttonScale }],
+          },
+        ]}
       >
-        {!isActive && (
+        <Animated.View
+          style={[StyleSheet.absoluteFill, { opacity: blurOpacity }]}
+        >
           <BlurView
             intensity={25}
             tint="light"
             style={StyleSheet.absoluteFill}
           />
-        )}
+        </Animated.View>
 
         <View pointerEvents="none" style={styles.insetShadow} />
 
-        <Text
-          style={[
-            styles.label,
-            isActive ? styles.labelActive : styles.labelInactive,
-          ]}
-        >
+        <Animated.Text style={[styles.label, { color: textColor }]}>
           {label}
-        </Text>
-      </LinearGradient>
+        </Animated.Text>
+      </AnimatedLinearGradient>
     </Pressable>
   );
 }
@@ -83,6 +118,8 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
     gap: 12,
+    paddingHorizontal: 32,
+    paddingBottom: 16,
   },
   buttonWrapper: {
     flex: 1,
@@ -103,25 +140,15 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     overflow: "hidden",
     height: 80,
-    // filter: "blur(2px)",
   },
   insetShadow: {
     ...StyleSheet.absoluteFillObject,
     borderRadius: 999,
     boxShadow: "inset 0px 0px 30px rgb(248, 248, 248)",
   },
-  buttonInactive: {
-    opacity: 0.55,
-  },
   label: {
     fontSize: 24,
     fontFamily: "Kalnia_600SemiBold",
     letterSpacing: 0.5,
-  },
-  labelActive: {
-    color: "#fff",
-  },
-  labelInactive: {
-    color: "rgba(244,245,241,0.6)",
   },
 });

@@ -4,13 +4,10 @@ export const entries: Entry[] = [
   {
     id: "julia",
     type: "person",
-    name: "Julia",
-    latitude: 50.8762,
-    longitude: 8.0205,
-    images: [
-      "https://placekitten.com/200/200",
-      "https://placekitten.com/201/200",
-    ],
+    name: "Jana",
+    latitude: 50.879852,
+    longitude: 8.012397,
+    images: [require("../assets/people/jana-1.png")],
     note: "Met near Unteres Schloss during sunset.",
   },
   {
